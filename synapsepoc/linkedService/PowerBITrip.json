@@ -1,0 +1,11 @@
+{
+	"name": "PowerBITrip",
+	"properties": {
+		"annotations": [],
+		"type": "PowerBIWorkspace",
+		"typeProperties": {
+			"workspaceID": "d9824e83-2da4-4a49-9ba4-efe80985b1cb",
+			"tenantID": "72f988bf-86f1-41af-91ab-2d7cd011db47"
+		}
+	}
+}
