@@ -8,6 +8,9 @@
 		"TripFaresSynapseAnalyticsLinkedService_connectionString": {
 			"value": ""
 		},
+		"AzureDataLakeStorage1_accountKey": {
+			"value": ""
+		},
 		"HttpServerTripDataLinkedService_properties_typeProperties_url": {
 			"value": "https://raw.githubusercontent.com/Azure/Test-Drive-Azure-Synapse-with-a-1-click-POC/main/tripDataAndFaresCSV/trip-data.csv"
 		},
@@ -19,6 +22,12 @@
 		},
 		"keyVaultLinkedservice_properties_typeProperties_baseUrl": {
 			"value": "@{concat('https://',linkedService().keyVaultName,'.vault.azure.net/')}"
+		},
+		"APIDEMO_properties_typeProperties_url": {
+			"value": "https://catfact.ninja/fact/"
+		},
+		"AzureDataLakeStorage1_properties_typeProperties_url": {
+			"value": "https://mstljrht57wqk3agpoc.dfs.core.windows.net"
 		}
 	}
 }
