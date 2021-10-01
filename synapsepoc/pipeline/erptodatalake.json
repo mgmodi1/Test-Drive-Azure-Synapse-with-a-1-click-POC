@@ -553,7 +553,7 @@
 						"mappings": [
 							{
 								"source": {
-									"name": "Name",
+									"name": "Plant",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -565,7 +565,7 @@
 							},
 							{
 								"source": {
-									"name": "Customer Number",
+									"name": "ProductName",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -577,7 +577,7 @@
 							},
 							{
 								"source": {
-									"name": "Type",
+									"name": "ProductCode",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -589,7 +589,7 @@
 							},
 							{
 								"source": {
-									"name": "Mailing Address",
+									"name": "ProductDescription",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -601,9 +601,9 @@
 							},
 							{
 								"source": {
-									"name": "Mailing City",
-									"type": "String",
-									"physicalType": "nvarchar"
+									"name": "YTDRevenue",
+									"type": "Int32",
+									"physicalType": "int"
 								},
 								"sink": {
 									"type": "String",
@@ -613,9 +613,9 @@
 							},
 							{
 								"source": {
-									"name": "Mailing State",
-									"type": "String",
-									"physicalType": "nvarchar"
+									"name": "YTDProfit",
+									"type": "Int32",
+									"physicalType": "int"
 								},
 								"sink": {
 									"type": "String",
@@ -625,9 +625,9 @@
 							},
 							{
 								"source": {
-									"name": "Mailing Zip Code",
-									"type": "Double",
-									"physicalType": "float"
+									"name": "BOMId",
+									"type": "String",
+									"physicalType": "nvarchar"
 								},
 								"sink": {
 									"type": "String",
@@ -637,7 +637,7 @@
 							},
 							{
 								"source": {
-									"name": "Phone",
+									"name": "Component",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -649,7 +649,7 @@
 							},
 							{
 								"source": {
-									"name": "Website",
+									"name": "ComponentParent",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -661,9 +661,9 @@
 							},
 							{
 								"source": {
-									"name": "Region",
-									"type": "String",
-									"physicalType": "nvarchar"
+									"name": "ComponentQuantity",
+									"type": "Double",
+									"physicalType": "float"
 								},
 								"sink": {
 									"type": "String",
@@ -673,7 +673,7 @@
 							},
 							{
 								"source": {
-									"name": "Disposition",
+									"name": "ComponentUnit",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -685,9 +685,9 @@
 							},
 							{
 								"source": {
-									"name": "Delivery Method",
-									"type": "String",
-									"physicalType": "nvarchar"
+									"name": "ComponentCost",
+									"type": "Double",
+									"physicalType": "float"
 								},
 								"sink": {
 									"type": "String",
@@ -697,7 +697,7 @@
 							},
 							{
 								"source": {
-									"name": "Communication Preference",
+									"name": "ComponentNumber",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -709,7 +709,7 @@
 							},
 							{
 								"source": {
-									"name": "Invoice Email",
+									"name": "ComponentCategory",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -721,7 +721,7 @@
 							},
 							{
 								"source": {
-									"name": "Distributor",
+									"name": "ComponentClass",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -733,7 +733,7 @@
 							},
 							{
 								"source": {
-									"name": "Lead Type",
+									"name": "ComponentSupplier",
 									"type": "String",
 									"physicalType": "nvarchar"
 								},
@@ -741,54 +741,6 @@
 									"type": "String",
 									"physicalType": "String",
 									"ordinal": 16
-								}
-							},
-							{
-								"source": {
-									"name": "Sales Person",
-									"type": "String",
-									"physicalType": "nvarchar"
-								},
-								"sink": {
-									"type": "String",
-									"physicalType": "String",
-									"ordinal": 17
-								}
-							},
-							{
-								"source": {
-									"name": "Tax ID",
-									"type": "String",
-									"physicalType": "nvarchar"
-								},
-								"sink": {
-									"type": "String",
-									"physicalType": "String",
-									"ordinal": 18
-								}
-							},
-							{
-								"source": {
-									"name": "State Tax ID",
-									"type": "String",
-									"physicalType": "nvarchar"
-								},
-								"sink": {
-									"type": "String",
-									"physicalType": "String",
-									"ordinal": 19
-								}
-							},
-							{
-								"source": {
-									"name": "License Number",
-									"type": "String",
-									"physicalType": "nvarchar"
-								},
-								"sink": {
-									"type": "String",
-									"physicalType": "String",
-									"ordinal": 20
 								}
 							}
 						],
