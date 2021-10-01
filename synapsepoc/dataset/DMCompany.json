@@ -9,7 +9,10 @@
 		"type": "DelimitedText",
 		"typeProperties": {
 			"location": {
-				"type": "AzureBlobStorageLocation"
+				"type": "AzureBlobStorageLocation",
+				"fileName": "Company",
+				"folderPath": "erptodata",
+				"container": "milindgmodi"
 			},
 			"columnDelimiter": ",",
 			"escapeChar": "\\",
