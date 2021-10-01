@@ -861,14 +861,14 @@
 						},
 						"inputs": [
 							{
-								"referenceName": "erpsource",
+								"referenceName": "AzureSqlTable2",
 								"type": "DatasetReference",
 								"parameters": {}
 							}
 						],
 						"outputs": [
 							{
-								"referenceName": "erptodatalake",
+								"referenceName": "Components",
 								"type": "DatasetReference",
 								"parameters": {}
 							}
@@ -885,7 +885,9 @@
 				"[concat(variables('workspaceId'), '/datasets/erpsource')]",
 				"[concat(variables('workspaceId'), '/datasets/erptodatalake')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSqlTable1')]",
-				"[concat(variables('workspaceId'), '/datasets/Productdetails')]"
+				"[concat(variables('workspaceId'), '/datasets/Productdetails')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSqlTable2')]",
+				"[concat(variables('workspaceId'), '/datasets/Components')]"
 			]
 		},
 		{
@@ -2923,6 +2925,124 @@
 					"location": {
 						"type": "AzureBlobStorageLocation",
 						"fileName": "Productdetails",
+						"folderPath": "erptodata",
+						"container": "milindgmodi"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/erptodatalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/AzureSqlTable2')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "erpsource",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Plant",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ProductName",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ProductCode",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ProductDescription",
+						"type": "nvarchar"
+					},
+					{
+						"name": "YTDRevenue",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "YTDProfit",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "BOMId",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Component",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentParent",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentQuantity",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "ComponentUnit",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentCost",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "ComponentNumber",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentCategory",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentClass",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentSupplier",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "tmpComponents"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/erpsource')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Components')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "erptodatalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "component",
 						"folderPath": "erptodata",
 						"container": "milindgmodi"
 					},
