@@ -1,0 +1,76 @@
+{
+	"name": "AzureSqlTable1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "erpsource",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "plant",
+				"type": "nvarchar"
+			},
+			{
+				"name": "productCode",
+				"type": "nvarchar"
+			},
+			{
+				"name": "bomId",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "component",
+				"type": "nvarchar"
+			},
+			{
+				"name": "parentItem",
+				"type": "nvarchar"
+			},
+			{
+				"name": "quantity",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "uom",
+				"type": "nvarchar"
+			},
+			{
+				"name": "estimatedExtCost",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "componentNumber",
+				"type": "nvarchar"
+			},
+			{
+				"name": "componentCategory",
+				"type": "nvarchar"
+			},
+			{
+				"name": "componentClass",
+				"type": "nvarchar"
+			},
+			{
+				"name": "componentSupplier",
+				"type": "nvarchar"
+			},
+			{
+				"name": "componentDistributor",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ProductDetailCode",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "ProductDetail"
+		}
+	}
+}

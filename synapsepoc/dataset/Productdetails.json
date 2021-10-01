@@ -1,5 +1,5 @@
 {
-	"name": "erptodatalake",
+	"name": "Productdetails",
 	"properties": {
 		"linkedServiceName": {
 			"referenceName": "erptodatalake",
@@ -9,10 +9,7 @@
 		"type": "DelimitedText",
 		"typeProperties": {
 			"location": {
-				"type": "AzureBlobStorageLocation",
-				"fileName": "Product_base",
-				"folderPath": "erptodata",
-				"container": "milindgmodi"
+				"type": "AzureBlobStorageLocation"
 			},
 			"columnDelimiter": ",",
 			"escapeChar": "\\",
