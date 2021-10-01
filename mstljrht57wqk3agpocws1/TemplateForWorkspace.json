@@ -96,8 +96,7 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/Dataflow1')]",
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+				"[concat(variables('workspaceId'), '/dataflows/Dataflow1')]"
 			]
 		},
 		{
@@ -2337,7 +2336,89 @@
 				},
 				"annotations": [],
 				"type": "AzureSqlTable",
-				"schema": [],
+				"schema": [
+					{
+						"name": "Name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Customer Number",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Type",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Mailing Address",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Mailing City",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Mailing State",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Mailing Zip Code",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "Phone",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Website",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Region",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Disposition",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Delivery Method",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Communication Preference",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Invoice Email",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Distributor",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Lead Type",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Sales Person",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Tax ID",
+						"type": "nvarchar"
+					},
+					{
+						"name": "State Tax ID",
+						"type": "nvarchar"
+					},
+					{
+						"name": "License Number",
+						"type": "nvarchar"
+					}
+				],
 				"typeProperties": {
 					"schema": "dbo",
 					"table": "Company"
