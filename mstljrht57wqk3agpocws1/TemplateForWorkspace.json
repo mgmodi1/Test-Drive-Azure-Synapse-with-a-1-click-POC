@@ -96,7 +96,8 @@
 				"annotations": []
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/Dataflow1')]"
+				"[concat(variables('workspaceId'), '/dataflows/Dataflow1')]",
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
 			]
 		},
 		{
@@ -2160,7 +2161,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"fileName": "component",
+						"fileName": "component.csv",
 						"folderPath": "erptodata",
 						"container": "milindgmodi"
 					},
@@ -2188,7 +2189,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"fileName": "Company",
+						"fileName": "Company.csv",
 						"folderPath": "erptodata",
 						"container": "milindgmodi"
 					},
@@ -2244,7 +2245,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"fileName": "Productdetails",
+						"fileName": "Productdetails.csv",
 						"folderPath": "erptodata",
 						"container": "milindgmodi"
 					},
@@ -2408,7 +2409,7 @@
 				"typeProperties": {
 					"location": {
 						"type": "AzureBlobStorageLocation",
-						"fileName": "Product_base",
+						"fileName": "Product_base.csv",
 						"folderPath": "erptodata",
 						"container": "milindgmodi"
 					},
