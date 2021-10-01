@@ -1,0 +1,85 @@
+{
+	"name": "AzureSqlTable2",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "erpsource",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "Plant",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ProductName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ProductCode",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ProductDescription",
+				"type": "nvarchar"
+			},
+			{
+				"name": "YTDRevenue",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "YTDProfit",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "BOMId",
+				"type": "nvarchar"
+			},
+			{
+				"name": "Component",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ComponentParent",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ComponentQuantity",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "ComponentUnit",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ComponentCost",
+				"type": "float",
+				"precision": 15
+			},
+			{
+				"name": "ComponentNumber",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ComponentCategory",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ComponentClass",
+				"type": "nvarchar"
+			},
+			{
+				"name": "ComponentSupplier",
+				"type": "nvarchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "dbo",
+			"table": "tmpComponents"
+		}
+	}
+}

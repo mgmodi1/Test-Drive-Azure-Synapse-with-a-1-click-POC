@@ -801,7 +801,7 @@
 				},
 				"inputs": [
 					{
-						"referenceName": "erpsource",
+						"referenceName": "AzureSqlTable2",
 						"type": "DatasetReference"
 					}
 				],
