@@ -53,6 +53,568 @@
 	},
 	"resources": [
 		{
+			"name": "[concat(parameters('workspaceName'), '/Pipeline 1')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow1",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "1.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "Dataflow1",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"source1": {},
+									"sink1": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/dataflows/Dataflow1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/TripFaresDataPipeline')]",
+			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"activities": [
+					{
+						"name": "IngestTripDataIntoADLS",
+						"description": "Copies the trip data csv file from the git repo and loads it into the ADLS.",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "tripsDataSource",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "tripDataSink",
+								"type": "DatasetReference",
+								"parameters": {
+									"datalakeAccountName": {
+										"value": "@pipeline().parameters.datalakeAccountName",
+										"type": "Expression"
+									},
+									"keyVaultName": {
+										"value": "@pipeline().parameters.KeyVaultName",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "IngestTripFaresDataIntoADLS",
+						"description": "Copies the trip fare data csv file from the git repo and loads it into the ADLS.",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.00:10:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobFSWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "faresDataSource",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "faresDataSink",
+								"type": "DatasetReference",
+								"parameters": {
+									"keyVaultName": {
+										"value": "@pipeline().parameters.KeyVaultName",
+										"type": "Expression"
+									},
+									"datalakeAccountName": {
+										"value": "@pipeline().parameters.datalakeAccountName",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "JoinAndAggregateData",
+						"description": "Reads the raw data from both CSV files inside the ADLS, performs the desired transformations (inner join and aggregation) and writes the transformed data into the synapse SQL pool.",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [
+							{
+								"activity": "Create Schema If Does Not Exists",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.00:30:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "tripFaresDataTransformations",
+								"type": "DataFlowReference",
+								"parameters": {},
+								"datasetParameters": {
+									"TripDataCSV": {
+										"datalakeAccountName": {
+											"value": "@pipeline().parameters.datalakeAccountName",
+											"type": "Expression"
+										},
+										"keyVaultName": {
+											"value": "@pipeline().parameters.KeyVaultName",
+											"type": "Expression"
+										}
+									},
+									"FaresDataCSV": {
+										"keyVaultName": {
+											"value": "@pipeline().parameters.KeyVaultName",
+											"type": "Expression"
+										},
+										"datalakeAccountName": {
+											"value": "@pipeline().parameters.datalakeAccountName",
+											"type": "Expression"
+										}
+									},
+									"SynapseAnalyticsSink": {
+										"SchemaName": {
+											"value": "@pipeline().parameters.SchemaName",
+											"type": "Expression"
+										},
+										"SynapseWorkspaceName": {
+											"value": "@pipeline().parameters.SynapseWorkspaceName",
+											"type": "Expression"
+										},
+										"SQLDedicatedPoolName": {
+											"value": "@pipeline().parameters.SQLDedicatedPoolName",
+											"type": "Expression"
+										},
+										"keyVaultName": {
+											"value": "@pipeline().parameters.KeyVaultName",
+											"type": "Expression"
+										},
+										"SQLLoginUsername": {
+											"value": "@pipeline().parameters.SQLLoginUsername",
+											"type": "Expression"
+										}
+									}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					},
+					{
+						"name": "Create Schema If Does Not Exists",
+						"description": "Creates the schema inside the SQL dedicated pool. Shema name comes from the pipeline parameter 'SchemaName'.",
+						"type": "Lookup",
+						"dependsOn": [
+							{
+								"activity": "IngestTripDataIntoADLS",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							},
+							{
+								"activity": "IngestTripFaresDataIntoADLS",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.00:05:00",
+							"retry": 3,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "SqlDWSource",
+								"sqlReaderQuery": {
+									"value": "IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '@{pipeline().parameters.SchemaName}')\nBEGIN\nEXEC('CREATE SCHEMA @{pipeline().parameters.SchemaName}')\nselect Count(*) from sys.symmetric_keys;\nEND\nELSE\nBEGIN\n    select Count(*) from sys.symmetric_keys;\nEND",
+									"type": "Expression"
+								},
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"dataset": {
+								"referenceName": "azureSynapseAnalyticsSchema",
+								"type": "DatasetReference",
+								"parameters": {
+									"SynapseWorkspaceName": {
+										"value": "@pipeline().parameters.SynapseWorkspaceName",
+										"type": "Expression"
+									},
+									"SQLDedicatedPoolName": {
+										"value": "@pipeline().parameters.SQLDedicatedPoolName",
+										"type": "Expression"
+									},
+									"keyVaultName": {
+										"value": "@pipeline().parameters.KeyVaultName",
+										"type": "Expression"
+									},
+									"SQLLoginUsername": {
+										"value": "@pipeline().parameters.SQLLoginUsername",
+										"type": "Expression"
+									}
+								}
+							},
+							"firstRowOnly": false
+						}
+					},
+					{
+						"name": "Copy data Trips Data",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Create Schema If Does Not Exists",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"preCopyScript": "IF (EXISTS (SELECT *\n  FROM INFORMATION_SCHEMA.TABLES\n  WHERE TABLE_SCHEMA = 'dbo'\n  AND TABLE_NAME = 'TripsData'))\nBEGIN \n   Truncate table TripsData;\nEnd\n",
+								"allowPolyBase": true,
+								"polyBaseSettings": {
+									"rejectValue": 0,
+									"rejectType": "value",
+									"useTypeDefault": true
+								},
+								"tableOption": "autoCreate",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "TripFaresDataLakeStorageLinkedService",
+									"type": "LinkedServiceReference",
+									"parameters": {
+										"keyVaultName": {
+											"value": "@pipeline().parameters.KeyVaultName",
+											"type": "Expression"
+										},
+										"datalakeAccountName": {
+											"value": "@pipeline().parameters.datalakeAccountName",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "tripsDataSource",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSynapseAnalyticsTripsData",
+								"type": "DatasetReference",
+								"parameters": {
+									"SynapseWorkspaceName": {
+										"value": "@pipeline().parameters.SynapseWorkspaceName",
+										"type": "Expression"
+									},
+									"SQLDedicatedPoolName": {
+										"value": "@pipeline().parameters.SQLDedicatedPoolName",
+										"type": "Expression"
+									},
+									"keyVaultName": {
+										"value": "@pipeline().parameters.KeyVaultName",
+										"type": "Expression"
+									},
+									"SQLLoginUsername": {
+										"value": "@pipeline().parameters.SQLLoginUsername",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					},
+					{
+						"name": "Copy data Fares Data",
+						"type": "Copy",
+						"dependsOn": [
+							{
+								"activity": "Create Schema If Does Not Exists",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "DelimitedTextSource",
+								"storeSettings": {
+									"type": "HttpReadSettings",
+									"requestMethod": "GET"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextReadSettings"
+								}
+							},
+							"sink": {
+								"type": "SqlDWSink",
+								"preCopyScript": "IF (EXISTS (SELECT *\n  FROM INFORMATION_SCHEMA.TABLES\n  WHERE TABLE_SCHEMA = 'dbo'\n  AND TABLE_NAME = 'FaresData'))\nBEGIN \n   Truncate table FaresData;\nEnd\n",
+								"allowPolyBase": true,
+								"polyBaseSettings": {
+									"rejectValue": 0,
+									"rejectType": "value",
+									"useTypeDefault": true
+								},
+								"tableOption": "autoCreate",
+								"disableMetricsCollection": false
+							},
+							"enableStaging": true,
+							"stagingSettings": {
+								"linkedServiceName": {
+									"referenceName": "TripFaresDataLakeStorageLinkedService",
+									"type": "LinkedServiceReference",
+									"parameters": {
+										"keyVaultName": {
+											"value": "@pipeline().parameters.KeyVaultName",
+											"type": "Expression"
+										},
+										"datalakeAccountName": {
+											"value": "@pipeline().parameters.datalakeAccountName",
+											"type": "Expression"
+										}
+									}
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "faresDataSource",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "AzureSynapseAnalyticsFaresData",
+								"type": "DatasetReference",
+								"parameters": {
+									"SynapseWorkspaceName": {
+										"value": "@pipeline().parameters.SynapseWorkspaceName",
+										"type": "Expression"
+									},
+									"SQLDedicatedPoolName": {
+										"value": "@pipeline().parameters.SQLDedicatedPoolName",
+										"type": "Expression"
+									},
+									"keyVaultName": {
+										"value": "@pipeline().parameters.KeyVaultName",
+										"type": "Expression"
+									},
+									"SQLLoginUsername": {
+										"value": "@pipeline().parameters.SQLLoginUsername",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"SchemaName": {
+						"type": "string",
+						"defaultValue": "tripFares"
+					},
+					"SynapseWorkspaceName": {
+						"type": "string",
+						"defaultValue": "mstljrht57wqk3agpocws1.database.windows.net"
+					},
+					"SQLDedicatedPoolName": {
+						"type": "string",
+						"defaultValue": "mstljrht57wqk3agpocws1p1"
+					},
+					"SQLLoginUsername": {
+						"type": "string",
+						"defaultValue": "milindmodi"
+					},
+					"KeyVaultName": {
+						"type": "string",
+						"defaultValue": "kvmstljrht57wqk3agpoc"
+					},
+					"datalakeAccountName": {
+						"type": "string",
+						"defaultValue": "mstljrht57wqk3agpoc"
+					}
+				},
+				"folder": {
+					"name": "TripFaresDataPipeline"
+				},
+				"annotations": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/datasets/tripsDataSource')]",
+				"[concat(variables('workspaceId'), '/datasets/tripDataSink')]",
+				"[concat(variables('workspaceId'), '/datasets/faresDataSource')]",
+				"[concat(variables('workspaceId'), '/datasets/faresDataSink')]",
+				"[concat(variables('workspaceId'), '/dataflows/tripFaresDataTransformations')]",
+				"[concat(variables('workspaceId'), '/datasets/azureSynapseAnalyticsSchema')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseAnalyticsTripsData')]",
+				"[concat(variables('workspaceId'), '/datasets/AzureSynapseAnalyticsFaresData')]",
+				"[concat(variables('workspaceId'), '/linkedServices/TripFaresDataLakeStorageLinkedService')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/erptodatalake')]",
 			"type": "Microsoft.Synapse/workspaces/pipelines",
 			"apiVersion": "2019-06-01-preview",
@@ -873,6 +1435,302 @@
 								"parameters": {}
 							}
 						]
+					},
+					{
+						"name": "erptodatalake_copy3",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "7.00:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "AzureSqlSource",
+								"queryTimeout": "02:00:00",
+								"partitionOption": "None"
+							},
+							"sink": {
+								"type": "DelimitedTextSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "DelimitedTextWriteSettings",
+									"quoteAllText": true,
+									"fileExtension": ".txt"
+								}
+							},
+							"enableStaging": false,
+							"translator": {
+								"type": "TabularTranslator",
+								"mappings": [
+									{
+										"source": {
+											"name": "Name",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 1
+										}
+									},
+									{
+										"source": {
+											"name": "Customer Number",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 2
+										}
+									},
+									{
+										"source": {
+											"name": "Type",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 3
+										}
+									},
+									{
+										"source": {
+											"name": "Mailing Address",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 4
+										}
+									},
+									{
+										"source": {
+											"name": "Mailing City",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 5
+										}
+									},
+									{
+										"source": {
+											"name": "Mailing State",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 6
+										}
+									},
+									{
+										"source": {
+											"name": "Mailing Zip Code",
+											"type": "Double",
+											"physicalType": "float"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 7
+										}
+									},
+									{
+										"source": {
+											"name": "Phone",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 8
+										}
+									},
+									{
+										"source": {
+											"name": "Website",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 9
+										}
+									},
+									{
+										"source": {
+											"name": "Region",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 10
+										}
+									},
+									{
+										"source": {
+											"name": "Disposition",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 11
+										}
+									},
+									{
+										"source": {
+											"name": "Delivery Method",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 12
+										}
+									},
+									{
+										"source": {
+											"name": "Communication Preference",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 13
+										}
+									},
+									{
+										"source": {
+											"name": "Invoice Email",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 14
+										}
+									},
+									{
+										"source": {
+											"name": "Distributor",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 15
+										}
+									},
+									{
+										"source": {
+											"name": "Lead Type",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 16
+										}
+									},
+									{
+										"source": {
+											"name": "Sales Person",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 17
+										}
+									},
+									{
+										"source": {
+											"name": "Tax ID",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 18
+										}
+									},
+									{
+										"source": {
+											"name": "State Tax ID",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 19
+										}
+									},
+									{
+										"source": {
+											"name": "License Number",
+											"type": "String",
+											"physicalType": "nvarchar"
+										},
+										"sink": {
+											"type": "String",
+											"physicalType": "String",
+											"ordinal": 20
+										}
+									}
+								],
+								"typeConversion": true,
+								"typeConversionSettings": {
+									"allowDataTruncation": true,
+									"treatBooleanAsNumber": false
+								}
+							}
+						},
+						"inputs": [
+							{
+								"referenceName": "Company",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "DMCompany",
+								"type": "DatasetReference",
+								"parameters": {}
+							}
+						]
 					}
 				],
 				"policy": {
@@ -887,569 +1745,180 @@
 				"[concat(variables('workspaceId'), '/datasets/AzureSqlTable1')]",
 				"[concat(variables('workspaceId'), '/datasets/Productdetails')]",
 				"[concat(variables('workspaceId'), '/datasets/AzureSqlTable2')]",
-				"[concat(variables('workspaceId'), '/datasets/Components')]"
+				"[concat(variables('workspaceId'), '/datasets/Components')]",
+				"[concat(variables('workspaceId'), '/datasets/Company')]",
+				"[concat(variables('workspaceId'), '/datasets/DMCompany')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/Pipeline 1')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"name": "[concat(parameters('workspaceName'), '/AzureSqlTable1')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
-				"activities": [
+				"linkedServiceName": {
+					"referenceName": "erpsource",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
 					{
-						"name": "Data flow1",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "1.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "Dataflow1",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"source1": {},
-									"sink1": {}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
+						"name": "plant",
+						"type": "nvarchar"
+					},
+					{
+						"name": "productCode",
+						"type": "nvarchar"
+					},
+					{
+						"name": "bomId",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "component",
+						"type": "nvarchar"
+					},
+					{
+						"name": "parentItem",
+						"type": "nvarchar"
+					},
+					{
+						"name": "quantity",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "uom",
+						"type": "nvarchar"
+					},
+					{
+						"name": "estimatedExtCost",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "componentNumber",
+						"type": "nvarchar"
+					},
+					{
+						"name": "componentCategory",
+						"type": "nvarchar"
+					},
+					{
+						"name": "componentClass",
+						"type": "nvarchar"
+					},
+					{
+						"name": "componentSupplier",
+						"type": "nvarchar"
+					},
+					{
+						"name": "componentDistributor",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ProductDetailCode",
+						"type": "nvarchar"
 					}
 				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"annotations": []
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "ProductDetail"
+				}
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/dataflows/Dataflow1')]"
+				"[concat(variables('workspaceId'), '/linkedServices/erpsource')]"
 			]
 		},
 		{
-			"name": "[concat(parameters('workspaceName'), '/TripFaresDataPipeline')]",
-			"type": "Microsoft.Synapse/workspaces/pipelines",
+			"name": "[concat(parameters('workspaceName'), '/AzureSqlTable2')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
 			"properties": {
-				"activities": [
+				"linkedServiceName": {
+					"referenceName": "erpsource",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
 					{
-						"name": "IngestTripDataIntoADLS",
-						"description": "Copies the trip data csv file from the git repo and loads it into the ADLS.",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.00:10:00",
-							"retry": 3,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "DelimitedTextSource",
-								"storeSettings": {
-									"type": "HttpReadSettings",
-									"requestMethod": "GET"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							},
-							"sink": {
-								"type": "DelimitedTextSink",
-								"storeSettings": {
-									"type": "AzureBlobFSWriteSettings"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextWriteSettings",
-									"quoteAllText": true,
-									"fileExtension": ".txt"
-								}
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "tripsDataSource",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "tripDataSink",
-								"type": "DatasetReference",
-								"parameters": {
-									"datalakeAccountName": {
-										"value": "@pipeline().parameters.datalakeAccountName",
-										"type": "Expression"
-									},
-									"keyVaultName": {
-										"value": "@pipeline().parameters.KeyVaultName",
-										"type": "Expression"
-									}
-								}
-							}
-						]
+						"name": "Plant",
+						"type": "nvarchar"
 					},
 					{
-						"name": "IngestTripFaresDataIntoADLS",
-						"description": "Copies the trip fare data csv file from the git repo and loads it into the ADLS.",
-						"type": "Copy",
-						"dependsOn": [],
-						"policy": {
-							"timeout": "0.00:10:00",
-							"retry": 3,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "DelimitedTextSource",
-								"storeSettings": {
-									"type": "HttpReadSettings",
-									"requestMethod": "GET"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							},
-							"sink": {
-								"type": "DelimitedTextSink",
-								"storeSettings": {
-									"type": "AzureBlobFSWriteSettings"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextWriteSettings",
-									"quoteAllText": true,
-									"fileExtension": ".txt"
-								}
-							},
-							"enableStaging": false,
-							"translator": {
-								"type": "TabularTranslator",
-								"typeConversion": true,
-								"typeConversionSettings": {
-									"allowDataTruncation": true,
-									"treatBooleanAsNumber": false
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "faresDataSource",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "faresDataSink",
-								"type": "DatasetReference",
-								"parameters": {
-									"keyVaultName": {
-										"value": "@pipeline().parameters.KeyVaultName",
-										"type": "Expression"
-									},
-									"datalakeAccountName": {
-										"value": "@pipeline().parameters.datalakeAccountName",
-										"type": "Expression"
-									}
-								}
-							}
-						]
+						"name": "ProductName",
+						"type": "nvarchar"
 					},
 					{
-						"name": "JoinAndAggregateData",
-						"description": "Reads the raw data from both CSV files inside the ADLS, performs the desired transformations (inner join and aggregation) and writes the transformed data into the synapse SQL pool.",
-						"type": "ExecuteDataFlow",
-						"dependsOn": [
-							{
-								"activity": "Create Schema If Does Not Exists",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.00:30:00",
-							"retry": 3,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"dataflow": {
-								"referenceName": "tripFaresDataTransformations",
-								"type": "DataFlowReference",
-								"parameters": {},
-								"datasetParameters": {
-									"TripDataCSV": {
-										"datalakeAccountName": {
-											"value": "@pipeline().parameters.datalakeAccountName",
-											"type": "Expression"
-										},
-										"keyVaultName": {
-											"value": "@pipeline().parameters.KeyVaultName",
-											"type": "Expression"
-										}
-									},
-									"FaresDataCSV": {
-										"keyVaultName": {
-											"value": "@pipeline().parameters.KeyVaultName",
-											"type": "Expression"
-										},
-										"datalakeAccountName": {
-											"value": "@pipeline().parameters.datalakeAccountName",
-											"type": "Expression"
-										}
-									},
-									"SynapseAnalyticsSink": {
-										"SchemaName": {
-											"value": "@pipeline().parameters.SchemaName",
-											"type": "Expression"
-										},
-										"SynapseWorkspaceName": {
-											"value": "@pipeline().parameters.SynapseWorkspaceName",
-											"type": "Expression"
-										},
-										"SQLDedicatedPoolName": {
-											"value": "@pipeline().parameters.SQLDedicatedPoolName",
-											"type": "Expression"
-										},
-										"keyVaultName": {
-											"value": "@pipeline().parameters.KeyVaultName",
-											"type": "Expression"
-										},
-										"SQLLoginUsername": {
-											"value": "@pipeline().parameters.SQLLoginUsername",
-											"type": "Expression"
-										}
-									}
-								}
-							},
-							"staging": {},
-							"compute": {
-								"coreCount": 8,
-								"computeType": "General"
-							},
-							"traceLevel": "Fine"
-						}
+						"name": "ProductCode",
+						"type": "nvarchar"
 					},
 					{
-						"name": "Create Schema If Does Not Exists",
-						"description": "Creates the schema inside the SQL dedicated pool. Shema name comes from the pipeline parameter 'SchemaName'.",
-						"type": "Lookup",
-						"dependsOn": [
-							{
-								"activity": "IngestTripDataIntoADLS",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							},
-							{
-								"activity": "IngestTripFaresDataIntoADLS",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "0.00:05:00",
-							"retry": 3,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "SqlDWSource",
-								"sqlReaderQuery": {
-									"value": "IF NOT EXISTS (SELECT * FROM sys.schemas WHERE name = '@{pipeline().parameters.SchemaName}')\nBEGIN\nEXEC('CREATE SCHEMA @{pipeline().parameters.SchemaName}')\nselect Count(*) from sys.symmetric_keys;\nEND\nELSE\nBEGIN\n    select Count(*) from sys.symmetric_keys;\nEND",
-									"type": "Expression"
-								},
-								"queryTimeout": "02:00:00",
-								"partitionOption": "None"
-							},
-							"dataset": {
-								"referenceName": "azureSynapseAnalyticsSchema",
-								"type": "DatasetReference",
-								"parameters": {
-									"SynapseWorkspaceName": {
-										"value": "@pipeline().parameters.SynapseWorkspaceName",
-										"type": "Expression"
-									},
-									"SQLDedicatedPoolName": {
-										"value": "@pipeline().parameters.SQLDedicatedPoolName",
-										"type": "Expression"
-									},
-									"keyVaultName": {
-										"value": "@pipeline().parameters.KeyVaultName",
-										"type": "Expression"
-									},
-									"SQLLoginUsername": {
-										"value": "@pipeline().parameters.SQLLoginUsername",
-										"type": "Expression"
-									}
-								}
-							},
-							"firstRowOnly": false
-						}
+						"name": "ProductDescription",
+						"type": "nvarchar"
 					},
 					{
-						"name": "Copy data Trips Data",
-						"type": "Copy",
-						"dependsOn": [
-							{
-								"activity": "Create Schema If Does Not Exists",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "DelimitedTextSource",
-								"storeSettings": {
-									"type": "HttpReadSettings",
-									"requestMethod": "GET"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							},
-							"sink": {
-								"type": "SqlDWSink",
-								"preCopyScript": "IF (EXISTS (SELECT *\n  FROM INFORMATION_SCHEMA.TABLES\n  WHERE TABLE_SCHEMA = 'dbo'\n  AND TABLE_NAME = 'TripsData'))\nBEGIN \n   Truncate table TripsData;\nEnd\n",
-								"allowPolyBase": true,
-								"polyBaseSettings": {
-									"rejectValue": 0,
-									"rejectType": "value",
-									"useTypeDefault": true
-								},
-								"tableOption": "autoCreate",
-								"disableMetricsCollection": false
-							},
-							"enableStaging": true,
-							"stagingSettings": {
-								"linkedServiceName": {
-									"referenceName": "TripFaresDataLakeStorageLinkedService",
-									"type": "LinkedServiceReference",
-									"parameters": {
-										"keyVaultName": {
-											"value": "@pipeline().parameters.KeyVaultName",
-											"type": "Expression"
-										},
-										"datalakeAccountName": {
-											"value": "@pipeline().parameters.datalakeAccountName",
-											"type": "Expression"
-										}
-									}
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "tripsDataSource",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "AzureSynapseAnalyticsTripsData",
-								"type": "DatasetReference",
-								"parameters": {
-									"SynapseWorkspaceName": {
-										"value": "@pipeline().parameters.SynapseWorkspaceName",
-										"type": "Expression"
-									},
-									"SQLDedicatedPoolName": {
-										"value": "@pipeline().parameters.SQLDedicatedPoolName",
-										"type": "Expression"
-									},
-									"keyVaultName": {
-										"value": "@pipeline().parameters.KeyVaultName",
-										"type": "Expression"
-									},
-									"SQLLoginUsername": {
-										"value": "@pipeline().parameters.SQLLoginUsername",
-										"type": "Expression"
-									}
-								}
-							}
-						]
+						"name": "YTDRevenue",
+						"type": "int",
+						"precision": 10
 					},
 					{
-						"name": "Copy data Fares Data",
-						"type": "Copy",
-						"dependsOn": [
-							{
-								"activity": "Create Schema If Does Not Exists",
-								"dependencyConditions": [
-									"Succeeded"
-								]
-							}
-						],
-						"policy": {
-							"timeout": "7.00:00:00",
-							"retry": 0,
-							"retryIntervalInSeconds": 30,
-							"secureOutput": false,
-							"secureInput": false
-						},
-						"userProperties": [],
-						"typeProperties": {
-							"source": {
-								"type": "DelimitedTextSource",
-								"storeSettings": {
-									"type": "HttpReadSettings",
-									"requestMethod": "GET"
-								},
-								"formatSettings": {
-									"type": "DelimitedTextReadSettings"
-								}
-							},
-							"sink": {
-								"type": "SqlDWSink",
-								"preCopyScript": "IF (EXISTS (SELECT *\n  FROM INFORMATION_SCHEMA.TABLES\n  WHERE TABLE_SCHEMA = 'dbo'\n  AND TABLE_NAME = 'FaresData'))\nBEGIN \n   Truncate table FaresData;\nEnd\n",
-								"allowPolyBase": true,
-								"polyBaseSettings": {
-									"rejectValue": 0,
-									"rejectType": "value",
-									"useTypeDefault": true
-								},
-								"tableOption": "autoCreate",
-								"disableMetricsCollection": false
-							},
-							"enableStaging": true,
-							"stagingSettings": {
-								"linkedServiceName": {
-									"referenceName": "TripFaresDataLakeStorageLinkedService",
-									"type": "LinkedServiceReference",
-									"parameters": {
-										"keyVaultName": {
-											"value": "@pipeline().parameters.KeyVaultName",
-											"type": "Expression"
-										},
-										"datalakeAccountName": {
-											"value": "@pipeline().parameters.datalakeAccountName",
-											"type": "Expression"
-										}
-									}
-								}
-							}
-						},
-						"inputs": [
-							{
-								"referenceName": "faresDataSource",
-								"type": "DatasetReference",
-								"parameters": {}
-							}
-						],
-						"outputs": [
-							{
-								"referenceName": "AzureSynapseAnalyticsFaresData",
-								"type": "DatasetReference",
-								"parameters": {
-									"SynapseWorkspaceName": {
-										"value": "@pipeline().parameters.SynapseWorkspaceName",
-										"type": "Expression"
-									},
-									"SQLDedicatedPoolName": {
-										"value": "@pipeline().parameters.SQLDedicatedPoolName",
-										"type": "Expression"
-									},
-									"keyVaultName": {
-										"value": "@pipeline().parameters.KeyVaultName",
-										"type": "Expression"
-									},
-									"SQLLoginUsername": {
-										"value": "@pipeline().parameters.SQLLoginUsername",
-										"type": "Expression"
-									}
-								}
-							}
-						]
+						"name": "YTDProfit",
+						"type": "int",
+						"precision": 10
+					},
+					{
+						"name": "BOMId",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Component",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentParent",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentQuantity",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "ComponentUnit",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentCost",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "ComponentNumber",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentCategory",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentClass",
+						"type": "nvarchar"
+					},
+					{
+						"name": "ComponentSupplier",
+						"type": "nvarchar"
 					}
 				],
-				"policy": {
-					"elapsedTimeMetric": {},
-					"cancelAfter": {}
-				},
-				"parameters": {
-					"SchemaName": {
-						"type": "string",
-						"defaultValue": "tripFares"
-					},
-					"SynapseWorkspaceName": {
-						"type": "string",
-						"defaultValue": "mstljrht57wqk3agpocws1.database.windows.net"
-					},
-					"SQLDedicatedPoolName": {
-						"type": "string",
-						"defaultValue": "mstljrht57wqk3agpocws1p1"
-					},
-					"SQLLoginUsername": {
-						"type": "string",
-						"defaultValue": "milindmodi"
-					},
-					"KeyVaultName": {
-						"type": "string",
-						"defaultValue": "kvmstljrht57wqk3agpoc"
-					},
-					"datalakeAccountName": {
-						"type": "string",
-						"defaultValue": "mstljrht57wqk3agpoc"
-					}
-				},
-				"folder": {
-					"name": "TripFaresDataPipeline"
-				},
-				"annotations": []
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "tmpComponents"
+				}
 			},
 			"dependsOn": [
-				"[concat(variables('workspaceId'), '/datasets/tripsDataSource')]",
-				"[concat(variables('workspaceId'), '/datasets/tripDataSink')]",
-				"[concat(variables('workspaceId'), '/datasets/faresDataSource')]",
-				"[concat(variables('workspaceId'), '/datasets/faresDataSink')]",
-				"[concat(variables('workspaceId'), '/dataflows/tripFaresDataTransformations')]",
-				"[concat(variables('workspaceId'), '/datasets/azureSynapseAnalyticsSchema')]",
-				"[concat(variables('workspaceId'), '/datasets/AzureSynapseAnalyticsTripsData')]",
-				"[concat(variables('workspaceId'), '/datasets/AzureSynapseAnalyticsFaresData')]",
-				"[concat(variables('workspaceId'), '/linkedServices/TripFaresDataLakeStorageLinkedService')]"
+				"[concat(variables('workspaceId'), '/linkedServices/erpsource')]"
 			]
 		},
 		{
@@ -1575,6 +2044,165 @@
 			]
 		},
 		{
+			"name": "[concat(parameters('workspaceName'), '/Company')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "erpsource",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [
+					{
+						"name": "Name",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Customer Number",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Type",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Mailing Address",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Mailing City",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Mailing State",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Mailing Zip Code",
+						"type": "float",
+						"precision": 15
+					},
+					{
+						"name": "Phone",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Website",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Region",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Disposition",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Delivery Method",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Communication Preference",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Invoice Email",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Distributor",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Lead Type",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Sales Person",
+						"type": "nvarchar"
+					},
+					{
+						"name": "Tax ID",
+						"type": "nvarchar"
+					},
+					{
+						"name": "State Tax ID",
+						"type": "nvarchar"
+					},
+					{
+						"name": "License Number",
+						"type": "nvarchar"
+					}
+				],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Company"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/erpsource')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Components')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "erptodatalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "component",
+						"folderPath": "erptodata",
+						"container": "milindgmodi"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/erptodatalake')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/DMCompany')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "erptodatalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Company",
+						"folderPath": "erptodata",
+						"container": "milindgmodi"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/erptodatalake')]"
+			]
+		},
+		{
 			"name": "[concat(parameters('workspaceName'), '/DelimitedText1')]",
 			"type": "Microsoft.Synapse/workspaces/datasets",
 			"apiVersion": "2019-06-01-preview",
@@ -1600,6 +2228,34 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/linkedServices/AzureDataLakeStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/Productdetails')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "erptodatalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Productdetails",
+						"folderPath": "erptodata",
+						"container": "milindgmodi"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/erptodatalake')]"
 			]
 		},
 		{
@@ -1715,6 +2371,55 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/linkedServices/TripFaresSynapseAnalyticsLinkedService')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/erpsource')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "erpsource",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "AzureSqlTable",
+				"schema": [],
+				"typeProperties": {
+					"schema": "dbo",
+					"table": "Company"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/erpsource')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/erptodatalake')]",
+			"type": "Microsoft.Synapse/workspaces/datasets",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "erptodatalake",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "Product_base",
+						"folderPath": "erptodata",
+						"container": "milindgmodi"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/linkedServices/erptodatalake')]"
 			]
 		},
 		{
@@ -2193,6 +2898,44 @@
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]",
 				"[concat(variables('workspaceId'), '/linkedServices/keyVaultLinkedservice')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/erpsource')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureSqlDatabase",
+				"typeProperties": {
+					"connectionString": "[parameters('erpsource_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('workspaceName'), '/erptodatalake')]",
+			"type": "Microsoft.Synapse/workspaces/linkedServices",
+			"apiVersion": "2019-06-01-preview",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('erptodatalake_connectionString')]"
+				},
+				"connectVia": {
+					"referenceName": "AutoResolveIntegrationRuntime",
+					"type": "IntegrationRuntimeReference"
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
 			]
 		},
 		{
@@ -2740,320 +3483,6 @@
 			},
 			"dependsOn": [
 				"[concat(variables('workspaceId'), '/managedVirtualNetworks/default')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/erpsource')]",
-			"type": "Microsoft.Synapse/workspaces/linkedServices",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"annotations": [],
-				"type": "AzureSqlDatabase",
-				"typeProperties": {
-					"connectionString": "[parameters('erpsource_connectionString')]"
-				},
-				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/erpsource')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "erpsource",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "Company"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/erpsource')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/erptodatalake')]",
-			"type": "Microsoft.Synapse/workspaces/linkedServices",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"connectionString": "[parameters('erptodatalake_connectionString')]"
-				},
-				"connectVia": {
-					"referenceName": "AutoResolveIntegrationRuntime",
-					"type": "IntegrationRuntimeReference"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/integrationRuntimes/AutoResolveIntegrationRuntime')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/erptodatalake')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "erptodatalake",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": "Product_base",
-						"folderPath": "erptodata",
-						"container": "milindgmodi"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"quoteChar": "\""
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/erptodatalake')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/AzureSqlTable1')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "erpsource",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [
-					{
-						"name": "plant",
-						"type": "nvarchar"
-					},
-					{
-						"name": "productCode",
-						"type": "nvarchar"
-					},
-					{
-						"name": "bomId",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "component",
-						"type": "nvarchar"
-					},
-					{
-						"name": "parentItem",
-						"type": "nvarchar"
-					},
-					{
-						"name": "quantity",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "uom",
-						"type": "nvarchar"
-					},
-					{
-						"name": "estimatedExtCost",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "componentNumber",
-						"type": "nvarchar"
-					},
-					{
-						"name": "componentCategory",
-						"type": "nvarchar"
-					},
-					{
-						"name": "componentClass",
-						"type": "nvarchar"
-					},
-					{
-						"name": "componentSupplier",
-						"type": "nvarchar"
-					},
-					{
-						"name": "componentDistributor",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ProductDetailCode",
-						"type": "nvarchar"
-					}
-				],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "ProductDetail"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/erpsource')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Productdetails')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "erptodatalake",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": "Productdetails",
-						"folderPath": "erptodata",
-						"container": "milindgmodi"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"quoteChar": "\""
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/erptodatalake')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/AzureSqlTable2')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "erpsource",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "AzureSqlTable",
-				"schema": [
-					{
-						"name": "Plant",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ProductName",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ProductCode",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ProductDescription",
-						"type": "nvarchar"
-					},
-					{
-						"name": "YTDRevenue",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "YTDProfit",
-						"type": "int",
-						"precision": 10
-					},
-					{
-						"name": "BOMId",
-						"type": "nvarchar"
-					},
-					{
-						"name": "Component",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ComponentParent",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ComponentQuantity",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "ComponentUnit",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ComponentCost",
-						"type": "float",
-						"precision": 15
-					},
-					{
-						"name": "ComponentNumber",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ComponentCategory",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ComponentClass",
-						"type": "nvarchar"
-					},
-					{
-						"name": "ComponentSupplier",
-						"type": "nvarchar"
-					}
-				],
-				"typeProperties": {
-					"schema": "dbo",
-					"table": "tmpComponents"
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/erpsource')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('workspaceName'), '/Components')]",
-			"type": "Microsoft.Synapse/workspaces/datasets",
-			"apiVersion": "2019-06-01-preview",
-			"properties": {
-				"linkedServiceName": {
-					"referenceName": "erptodatalake",
-					"type": "LinkedServiceReference"
-				},
-				"annotations": [],
-				"type": "DelimitedText",
-				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": "component",
-						"folderPath": "erptodata",
-						"container": "milindgmodi"
-					},
-					"columnDelimiter": ",",
-					"escapeChar": "\\",
-					"quoteChar": "\""
-				},
-				"schema": []
-			},
-			"dependsOn": [
-				"[concat(variables('workspaceId'), '/linkedServices/erptodatalake')]"
 			]
 		}
 	]
