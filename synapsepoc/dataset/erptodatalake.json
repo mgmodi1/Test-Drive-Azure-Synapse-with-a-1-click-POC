@@ -10,7 +10,7 @@
 		"typeProperties": {
 			"location": {
 				"type": "AzureBlobStorageLocation",
-				"fileName": "Product_base",
+				"fileName": "Product_base.csv",
 				"folderPath": "erptodata",
 				"container": "milindgmodi"
 			},
