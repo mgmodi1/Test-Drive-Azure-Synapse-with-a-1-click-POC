@@ -807,7 +807,7 @@
 				],
 				"outputs": [
 					{
-						"referenceName": "erptodatalake",
+						"referenceName": "Components",
 						"type": "DatasetReference"
 					}
 				]

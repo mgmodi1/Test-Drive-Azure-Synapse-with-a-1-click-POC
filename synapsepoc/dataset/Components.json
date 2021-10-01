@@ -1,0 +1,23 @@
+{
+	"name": "Components",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "erptodatalake",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "DelimitedText",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": "component",
+				"folderPath": "erptodata",
+				"container": "milindgmodi"
+			},
+			"columnDelimiter": ",",
+			"escapeChar": "\\",
+			"quoteChar": "\""
+		},
+		"schema": []
+	}
+}
